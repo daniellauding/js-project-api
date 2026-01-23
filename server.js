@@ -1,6 +1,6 @@
 import cors from "cors"
 import express from "express"
-import thoughts from "./data/thoughts.json";
+import thoughts from "./data/thoughts.json" with { type: "json" };
 
 // Defines the port the app will run on. Defaults to 8080, but can be overridden
 // when starting the server. Example command to overwrite PORT env variable value:
