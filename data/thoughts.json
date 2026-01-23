@@ -1,0 +1,156 @@
+[
+  {
+    "id": 1,
+    "message": "Today I learned Express!",
+    "hearts": 5,
+    "category": "learning",
+    "createdAt": "2026-01-10T10:00:00.00Z"
+  },
+  {
+    "id": 2,
+    "message": "Coffee is the best",
+    "hearts": 12,
+    "category": "food",
+    "createdAt": "2026-01-11T08:30:00.00Z"
+  },
+  {
+    "id": 3,
+    "message": "My cat is sleeping on my keyboard",
+    "hearts": 24,
+    "category": "home",
+    "createdAt": "2026-01-12T15:45:00.00Z"
+  },
+  {
+    "id": 4,
+    "message": "Snow is finally falling outside the window",
+    "hearts": 7,
+    "category": "weather",
+    "createdAt": "2026-01-13T06:12:00.00Z"
+  },
+  {
+    "id": 5,
+    "message": "Refactored old React code and everything feels cleaner",
+    "hearts": 18,
+    "category": "coding",
+    "createdAt": "2026-01-13T09:47:00.00Z"
+  },
+  {
+    "id": 6,
+    "message": "Walk without podcasts felt surprisingly nice",
+    "hearts": 9,
+    "category": "mindfulness",
+    "createdAt": "2026-01-14T17:22:00.00Z"
+  },
+  {
+    "id": 7,
+    "message": "Tried dark mode and never want to go back",
+    "hearts": 21,
+    "category": "tech",
+    "createdAt": "2026-01-14T20:05:00.00Z"
+  },
+  {
+    "id": 8,
+    "message": "Pair programming saved me from a really stubborn bug",
+    "hearts": 14,
+    "category": "coding",
+    "createdAt": "2026-01-15T19:11:00.00Z"
+  },
+  {
+    "id": 9,
+    "message": "Found the perfect playlist for focus mode",
+    "hearts": 16,
+    "category": "music",
+    "createdAt": "2026-01-16T21:30:00.00Z"
+  },
+  {
+    "id": 10,
+    "message": "Pushed the first version of my new side project",
+    "hearts": 27,
+    "category": "projects",
+    "createdAt": "2026-01-17T09:03:00.00Z"
+  },
+  {
+    "id": 11,
+    "message": "Closed all old browser tabs, feel like a new person",
+    "hearts": 19,
+    "category": "productivity",
+    "createdAt": "2026-01-17T11:58:00.00Z"
+  },
+  {
+    "id": 12,
+    "message": "Finally wrote tests for that tricky function",
+    "hearts": 13,
+    "category": "coding",
+    "createdAt": "2026-01-18T14:40:00.00Z"
+  },
+  {
+    "id": 13,
+    "message": "Inbox down to zero, almost unreal feeling",
+    "hearts": 22,
+    "category": "productivity",
+    "createdAt": "2026-01-18T19:26:00.00Z"
+  },
+  {
+    "id": 14,
+    "message": "Tried standing desk all day, back thanks me",
+    "hearts": 11,
+    "category": "health",
+    "createdAt": "2026-01-19T08:55:00.00Z"
+  },
+  {
+    "id": 15,
+    "message": "Skiing in calendar, winter feels okay again",
+    "hearts": 25,
+    "category": "skiing",
+    "createdAt": "2026-01-19T16:17:00.00Z"
+  },
+  {
+    "id": 16,
+    "message": "Logged out of social media for a week",
+    "hearts": 30,
+    "category": "mindfulness",
+    "createdAt": "2026-01-20T12:34:00.00Z"
+  },
+  {
+    "id": 17,
+    "message": "Finally got my VS Code setup perfect",
+    "hearts": 17,
+    "category": "tech",
+    "createdAt": "2026-01-20T19:02:00.00Z"
+  },
+  {
+    "id": 18,
+    "message": "Discovered walks solve more bugs than expected",
+    "hearts": 28,
+    "category": "life",
+    "createdAt": "2026-01-21T07:48:00.00Z"
+  },
+  {
+    "id": 19,
+    "message": "Perfect coffee mid-debug session",
+    "hearts": 20,
+    "category": "food",
+    "createdAt": "2026-01-21T10:19:00.00Z"
+  },
+  {
+    "id": 20,
+    "message": "Added dark mode toggle to latest project",
+    "hearts": 23,
+    "category": "projects",
+    "createdAt": "2026-01-21T18:33:00.00Z"
+  },
+  {
+    "id": 21,
+    "message": "Set up automatic backups, suddenly feel adult",
+    "hearts": 15,
+    "category": "tech",
+    "createdAt": "2026-01-22T09:10:00.00Z"
+  },
+  {
+    "id": 22,
+    "message": "Found new favorite lunch spot around corner",
+    "hearts": 10,
+    "category": "food",
+    "createdAt": "2026-01-22T11:25:00.00Z"
+  }
+]
