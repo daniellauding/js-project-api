@@ -1,10 +1,14 @@
-import cors from "cors"
-import express from "express"
-import thoughts from "./data/thoughts.json" with { type: "json" };
+import cors from "cors";
+import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import Thought from "./models/Thought.js";
 
 // Defines the port the app will run on. Defaults to 8080, but can be overridden
 // when starting the server. Example command to overwrite PORT env variable value:
 // PORT=9000 npm start
+dotenv.config();
+
 const port = process.env.PORT || 8080
 const app = express()
 
@@ -20,62 +24,161 @@ app.get('/', (req, res) => {
       { method: "GET", path: "/", description: "This documentation" },
       { method: "GET", path: "/thoughts", description: "Get all thoughts" },
       { method: "GET", path: "/thoughts/:id", description: "Get one thought by ID" },
+      { method: "POST", path: "/thoughts", description: "Create a thought" },
+      { method: "POST", path: "/thoughts/:id/like", description: "Like a thought" },
+      { method: "DELETE", path: "/thoughts/:id", description: "Delete a thought" }
     ]
   });
-})
+});
 
-app.get("/thoughts", (req, res) =>  {
+app.get("/thoughts", async (req, res) =>  {
+  try {
+    const { category, sort, page = 1, limit = 20 } = req.query;
 
-  let results = [...thoughts];
+    let filter = {};
 
-  const category = req.query.category;
+    if (category) {
+      filter.category = category.toLowerCase();
+    }
+    
+    let query = Thought.find(filter);
 
-  if (category) {
-    results = results.filter(t => t.category.toLowerCase() === category.toLowerCase());
+    if (sort === "hearts") {
+      query = query.sort({ heats: -1 });
+    } else if (sort === "date") {
+      query = query.sort({ createdAt: -1 });
+    } else {
+      query = query.sort({ createdAt: -1 });
+    }
+
+    const skip = (Number(page) -1) * Number(limit);
+    query = query.skip(skip).limit(Number(limit));
+
+    const thoughts = await query;
+
+    const total = await Thought.countDocuments();
+
+    res.json({
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / Number(limit)),
+      results: thoughts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Could not fetch thoughts",
+      message: error.message
+    });
   }
+});
 
-  const sort = req.query.sort;
+app.get('/thoughts/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+      const thought = await Thought.findById(req.params.id);
+      
+    if (!thought) {
+      return res.status(404).json({
+        success: false,
+        error: "Thought not found",
+        message: `No thought with id ${id} exists`,
+      });
+    }
 
-  if (sort === "hearts") {
-    results.sort((a, b) => b.hearts - a.hearts);
-  } else if (sort === "date") {
-    results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(thought);
+  } catch(error) {
+    res.status(400).json({
+      success: false,
+      error: "Invalid id format",
+      message: error.message
+    });
   }
+});
 
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 10;
+app.post("/thoughts", async(req, res) => {
+  try {
+    const { message, category } = req.body;
 
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
+    const thought = new Thought({
+      message,
+      category
+    });
 
-  const paginatedResults = results.slice(startIndex, endIndex);
+    const savedThought = await thought.save();
 
-  res.json({
-    total: thoughts.length,
-    page: page,
-    limit: limit,
-    totalPages: Math.ceil(results.length / limit),
-    results: paginatedResults,
+    res.status(201).json(savedThought);
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: "Could not create thought",
+      message: error.message
+    });
+  }
+});
+
+app.post("/thoughts/:id/like", async (req, res) => {
+  try {
+    const thought = await Thought.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { hearts: 1 } },
+      { new: true }
+    );
+
+    if (!thought) {
+      return res.status(404).json({
+        success: false,
+        error: "Thought not found",
+      });
+    }
+    
+    res.json(thought)
+
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: "Could not like thought",
+      message: error.message
+    });
+  }
+});
+
+app.delete("/thoughts/:id", async (req, res) => {
+  try {
+    const thought = await Thought.findByIdAndDelete(req.params.id);
+
+    if (!thought) {
+      return res.status(404).json({
+        success: false,
+        error: "Thought not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Thought deleted",
+      deleted: thought
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: "Could not delete thought",
+      message: error.message
+    });
+  }
+});
+
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => {
+    console.log("Connected to MongoDB");
+
+    app.listen(port, () => {
+      console.log(`Server running on http://localhost:${port}`)
+    });
+
+  })
+  .catch((error) => {
+    console.error("Could not connect to MongoDB:", error.message)
   });
-})
-
-app.get('/thoughts/:id', (req, res) => {
-  const id = req.params.id;
-  const thought = thoughts.find(t => t.id === Number(id));
-  
-if (!thought) {
-  res.status(404).json({
-    success: false,
-    error: "Thought not found",
-    message: `No thought with id ${id} exists`,
-  });
-  return;
-}
-
-  res.json(thought);
-})
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`)
-})
