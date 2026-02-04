@@ -292,6 +292,20 @@ app.delete("/users/me", authenticateUser, async (req, res) => {
   }
 });
 
+// GET /users - List all users (for debugging - remove in production!)
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({}, { password: 0, accessToken: 0 }); // Exclude sensitive fields
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Could not fetch users",
+      message: error.message
+    });
+  }
+});
+
 app.post("/users", async (req, res) => {
   try {
     const { username, email, password } = req.body;
