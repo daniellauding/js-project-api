@@ -50,18 +50,33 @@ app.get('/', (req, res) => {
       { method: "GET", path: "/", description: "This documentation" },
       { method: "GET", path: "/thoughts", description: "Get all thoughts" },
       { method: "GET", path: "/thoughts/:id", description: "Get one thought by ID" },
-      { method: "POST", path: "/thoughts", description: "Create a thought" },
+      { method: "POST", path: "/thoughts", description: "Create a thought (auth required)" },
+      { method: "PATCH", path: "/thoughts/:id", description: "Update a thought (auth required, owner only)" },
       { method: "POST", path: "/thoughts/:id/like", description: "Like a thought" },
-      { method: "DELETE", path: "/thoughts/:id", description: "Delete a thought" },
+      { method: "DELETE", path: "/thoughts/:id", description: "Delete a thought (auth required, owner only)" },
       { method: "POST", path: "/users", description: "Register new user" },
       { method: "POST", path: "/sessions", description: "Login (get access token)" }
     ],
     authentication: {
       description: "Some endpoints require authentication",
       howTo: "Include 'Authorization' header with your access token",
-      protectedEndpoints: ["POST /thoughts", "DELETE /thoughts/:id"]
+      protectedEndpoints: ["POST /thoughts", "PATCH /thoughts/:id", "DELETE /thoughts/:id"]
     }
   });
+});
+
+// Get all unique categories from database
+app.get("/categories", async (req, res) => {
+  try {
+    const categories = await Thought.distinct("category");
+    res.json(categories.filter(Boolean).sort());
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Could not fetch categories",
+      message: error.message
+    });
+  }
 });
 
 app.get("/thoughts", async (req, res) =>  {
@@ -137,7 +152,8 @@ app.post("/thoughts", authenticateUser, async(req, res) => {
     const thought = new Thought({
       message,
       category,
-      user: req.user._ud
+      user: req.user._id,
+      username: req.user.username
     });
 
     const savedThought = await thought.save();
@@ -179,7 +195,8 @@ app.post("/thoughts/:id/like", async (req, res) => {
 
 app.delete("/thoughts/:id", authenticateUser, async (req, res) => {
   try {
-    const thought = await Thought.findByIdAndDelete(req.params.id);
+    // First find the thought to check ownership
+    const thought = await Thought.findById(req.params.id);
 
     if (!thought) {
       return res.status(404).json({
@@ -188,10 +205,15 @@ app.delete("/thoughts/:id", authenticateUser, async (req, res) => {
       });
     }
 
-    if (thought.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: "Not authorized" });
+    // Check if user owns this thought
+    if (thought.user && thought.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized - you can only delete your own thoughts"
+      });
     }
 
+    // Now delete it
     await Thought.findByIdAndDelete(req.params.id);
 
     res.json({
@@ -203,6 +225,46 @@ app.delete("/thoughts/:id", authenticateUser, async (req, res) => {
     res.status(400).json({
       success: false,
       error: "Could not delete thought",
+      message: error.message
+    });
+  }
+});
+
+// PATCH /thoughts/:id - Update a thought (only owner can update)
+app.patch("/thoughts/:id", authenticateUser, async (req, res) => {
+  try {
+    const { message, category } = req.body;
+
+    // First find the thought to check ownership
+    const thought = await Thought.findById(req.params.id);
+
+    if (!thought) {
+      return res.status(404).json({
+        success: false,
+        error: "Thought not found"
+      });
+    }
+
+    // Check if user owns this thought
+    if (thought.user && thought.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized - you can only edit your own thoughts"
+      });
+    }
+
+    // Update the thought
+    const updatedThought = await Thought.findByIdAndUpdate(
+      req.params.id,
+      { message, category },
+      { new: true, runValidators: true }
+    );
+
+    res.json(updatedThought);
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: "Could not update thought",
       message: error.message
     });
   }

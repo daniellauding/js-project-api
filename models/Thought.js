@@ -19,6 +19,10 @@ const thoughtSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
   },
+  username: {
+    type: String,
+    default: "Anonymous"
+  },
   createdAt: {
     type: Date,
     default: Date.now
