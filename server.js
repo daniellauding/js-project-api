@@ -1,22 +1,48 @@
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import Thought from "./models/Thought.js";
+import User from "./models/User.js";
 
-// Defines the port the app will run on. Defaults to 8080, but can be overridden
-// when starting the server. Example command to overwrite PORT env variable value:
-// PORT=9000 npm start
 dotenv.config();
 
 const port = process.env.PORT || 8080
 const app = express()
 
-// Add middlewares to enable cors and json body parsing
 app.use(cors())
 app.use(express.json())
 
-// Start defining your routes here
+const authenticateUser = async (req, res, next) => {
+  const token = req.header("Authorization");
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: "Access denied. No token provided"
+    });
+  }
+
+  try {
+    const user = await User.findOne({ accessToken: token });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid token"
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Authentication error"
+    });
+  }
+};
+
 app.get('/', (req, res) => {
   res.json({
     message: "Welcome to Happy Thoughts API",
@@ -26,8 +52,15 @@ app.get('/', (req, res) => {
       { method: "GET", path: "/thoughts/:id", description: "Get one thought by ID" },
       { method: "POST", path: "/thoughts", description: "Create a thought" },
       { method: "POST", path: "/thoughts/:id/like", description: "Like a thought" },
-      { method: "DELETE", path: "/thoughts/:id", description: "Delete a thought" }
-    ]
+      { method: "DELETE", path: "/thoughts/:id", description: "Delete a thought" },
+      { method: "POST", path: "/users", description: "Register new user" },
+      { method: "POST", path: "/sessions", description: "Login (get access token)" }
+    ],
+    authentication: {
+      description: "Some endpoints require authentication",
+      howTo: "Include 'Authorization' header with your access token",
+      protectedEndpoints: ["POST /thoughts", "DELETE /thoughts/:id"]
+    }
   });
 });
 
@@ -97,17 +130,17 @@ app.get('/thoughts/:id', async (req, res) => {
   }
 });
 
-app.post("/thoughts", async(req, res) => {
+app.post("/thoughts", authenticateUser, async(req, res) => {
   try {
     const { message, category } = req.body;
 
     const thought = new Thought({
       message,
-      category
+      category,
+      user: req.user._ud
     });
 
     const savedThought = await thought.save();
-
     res.status(201).json(savedThought);
   } catch (error) {
     res.status(400).json({
@@ -144,7 +177,7 @@ app.post("/thoughts/:id/like", async (req, res) => {
   }
 });
 
-app.delete("/thoughts/:id", async (req, res) => {
+app.delete("/thoughts/:id", authenticateUser, async (req, res) => {
   try {
     const thought = await Thought.findByIdAndDelete(req.params.id);
 
@@ -154,6 +187,12 @@ app.delete("/thoughts/:id", async (req, res) => {
         error: "Thought not found"
       });
     }
+
+    if (thought.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    await Thought.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,
@@ -166,6 +205,73 @@ app.delete("/thoughts/:id", async (req, res) => {
       error: "Could not delete thought",
       message: error.message
     });
+  }
+});
+
+app.post("/users", async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: "Email already exists"
+      });
+    }
+
+    const user = new User({ username, email, password });
+    const savedUser = await user.save();
+
+    res.status(201).json({
+      success: true,
+      userId: savedUser._id,
+      username: savedUser.username,
+      accessToken: savedUser.accessToken
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: "Could not create user",
+      message: error.message
+    })
+  }
+});
+
+app.post("/sessions", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid email or password"
+      })
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if(!isMatch) {
+      return res.status(401).json({
+        success:false,
+        error: "Invalid email or password"
+      });
+    }
+    user.accessToken = crypto.randomUUID();
+    await user.save();
+
+    res.json({
+      success: true,
+      userId: user._id,
+      username: user.username,
+      accessToken: user.accessToken
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Login failed",
+      message: error.message
+    })
   }
 });
 

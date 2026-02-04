@@ -15,6 +15,10 @@ const thoughtSchema = new mongoose.Schema({
     type: String,
     default: "general"
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
   createdAt: {
     type: Date,
     default: Date.now
