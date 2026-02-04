@@ -270,6 +270,28 @@ app.patch("/thoughts/:id", authenticateUser, async (req, res) => {
   }
 });
 
+// DELETE /users/me - Delete own account
+app.delete("/users/me", authenticateUser, async (req, res) => {
+  try {
+    // Delete all user's thoughts first
+    await Thought.deleteMany({ user: req.user._id });
+
+    // Delete the user
+    await User.findByIdAndDelete(req.user._id);
+
+    res.json({
+      success: true,
+      message: "Account deleted successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Could not delete account",
+      message: error.message
+    });
+  }
+});
+
 app.post("/users", async (req, res) => {
   try {
     const { username, email, password } = req.body;
