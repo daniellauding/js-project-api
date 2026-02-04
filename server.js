@@ -292,6 +292,35 @@ app.delete("/users/me", authenticateUser, async (req, res) => {
   }
 });
 
+// DELETE /users/:id - Delete user by ID (for debugging - remove in production!)
+app.delete("/users/:id", async (req, res) => {
+  try {
+    // Delete all user's thoughts first
+    await Thought.deleteMany({ user: req.params.id });
+
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "User and their thoughts deleted",
+      deleted: { username: user.username, email: user.email }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: "Could not delete user",
+      message: error.message
+    });
+  }
+});
+
 // GET /users - List all users (for debugging - remove in production!)
 app.get("/users", async (req, res) => {
   try {
